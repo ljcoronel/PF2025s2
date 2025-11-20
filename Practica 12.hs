@@ -208,11 +208,11 @@ tree2 = NodeT 1 (NodeT 2 (NodeT 4 EmptyT
 tree3 :: Tree Int
 tree3 = NodeT 1 (NodeT 2 (NodeT 4 EmptyT
                                   EmptyT)
-                         (NodeT 5 EmptyT
+                         (NodeT 9 EmptyT
                                   EmptyT))
                 (NodeT 2 (NodeT 6 EmptyT
                                   EmptyT)
-                         (NodeT 7 (NodeT 8 EmptyT
+                         (NodeT 9 (NodeT 9 EmptyT
                                            EmptyT)
                                   (NodeT 9 EmptyT
                                            EmptyT)))
@@ -563,9 +563,10 @@ caminoMasLargoGT (GNode x ts) = x : laMasLarga (map caminoMasLargoGT ts)
 
 laMasLarga :: [[a]] -> [a]
 laMasLarga []       = []
-laMasLarga (xs:xss) = if length xs > length (laMasLarga xss)
-                       then xs
-                       else laMasLarga xss
+laMasLarga (xs:xss) = maxBy length xs (laMasLarga xss)
+
+maxBy :: (a -> Int) -> a -> a -> a
+maxBy f x y = if f x > f y then x else y
 
 -- Ejercicio xii
 todosLosCaminosGT :: GTree a -> [[a]]
@@ -586,9 +587,7 @@ caminoHastaGT e t = case mCaminoHastaGT e t of
                      Just xs -> xs
 
 mCaminoHastaGT :: Eq a => a -> GTree a -> Maybe [a]
-mCaminoHastaGT e (GNode x ts) = if e==x
-                                 then Just []
-                                 else agregarM x (findM (map (mCaminoHastaGT e) ts))
+mCaminoHastaGT e (GNode x ts) = if e==x then Just [] else agregarM x (findM (map (mCaminoHastaGT e) ts))
 
 agregarM :: a -> Maybe [a] -> Maybe [a]
 agregarM x (Just xs) = Just (x:xs)
@@ -1370,10 +1369,10 @@ any (elem o) (xs:xss') || any (elem o) (ys:yss')
 elem o xs || any (elem o) xss' || elem o ys || any (elem o) yss'
 = Lema conmutatividad-or
 elem o xs || elem o ys || any (elem o) xss' || any (elem o) yss'
-= Lema elem-or
+= Lema elem-append
 elem o (xs ++ ys) || any (elem o) xss' || any (elem o) yss'  -- VALE EL CASO VALE LA PROPIEDAD
 
-Lama elem-or: ¿para todo x. para todo xs. para todo ys. elem o xs || elem o ys = elem o (xs++ys)?
+Lama elem-append: ¿para todo x. para todo xs. para todo ys. elem o xs || elem o ys = elem o (xs++ys)?
 Dem: sean o zs ws. Por ppio de ind. en la estructura de zs:
 CB zs = []) ¿elem o [] || elem o ws = elem o ([]++ws)?
 CI zs = x:xs') HI) ¡elem o xs' || elem o ws = elem o (xs'++ws)!
@@ -1463,15 +1462,51 @@ min (1 + heightT ti1 `max` heightT td1) (1 + heightT ti2 `max` heightT td2)
 Lema sum-min
 1 + min (heightT ti1 `max` heightT td1) (heightT ti2 `max` heightT td2)
 = seccion de operadores
-1 + min (max (heightT ti1) (heightT td1)) (max (heightT ti2) (heightT td2))
-= Lema max-min
-1 + max (min (heightT ti1) (heightT ti2)) (min (heightT td1) (heightT td2))  -- VALE EL CASO VALE LA PROPIEDAD
+1 + min (max (heightT ti1) (heightT td1)) (max (heightT ti2) (heightT td2))-- NO SE PUEDE DEMOSTRAR
+Contraejemplo:
+t1 = NodeT 1 (NodeT 2 EmptyT EmptyT) EmptyT
+t2 = NodeT 3 EmptyT (NodeT 4 EmptyT EmptyT)
+heightT (zipWithT (+) t1 t2) = 1
+min (heightT t1) (heightT t2) = 2
 
-Lema sum-min : ¿para todo n1. para todo n2. para todo n3. min (n1+n2) (n1+n3) = n1 + min n2 n3? -- CONSULTAR
-Dem: ...
-
-Lema max-min : ¿para todo n1. para todo n2. para todo n3. para todo n4. max (min n1 n2) (min n3 n4) = min (max n1 n3) (max n2 n4)? -- CONSULTAR
-Dem: ...
+Lema sum-min : ¿para todo n1. para todo n2. para todo n3. min (n1+n2) (n1+n3) = n1 + min n2 n3?
+Dem: sean m1 m2 m3:
+C1 m2 <= m3) ¿min (m1+m2) (m1+m3) = m1 + min m2 m3?
+C2 m2 > m3) ¿min (m1+m2) (m1+m3) = m1 + min m2 m3?
+Dem C1:
+Lado izq:
+  min (m1+m2) (m1+m3)
+=                                (min)
+  if m1+m2 <= m1+m3 then m1+m2 else m1+m3
+=                                (def <=)
+  if True then m1+m2 else m1+m3 
+=                                (eval-if)
+  m1+m2
+Lado der:
+  m1 + min m2 m3
+=                                (min)
+  m1 + if m2 <= m3 then m2 else m3
+=                                (def <=)
+  m1 + if True then m2 else m3
+=                                (eval-if)
+  m1 + m2  -- VALE EL CASO
+Dem C2:
+Lado izq:
+  min (m1+m2) (m1+m3)
+=                                (min)
+  if m1+m2 <= m1+m3 then m1+m2 else m1+m3
+=                                (def <=)
+  if False then m1+m2 else m1+m3
+=                                (eval-if)
+  m1+m3
+Lado der:
+  m1 + min m2 m3
+=                                (min)
+  m1 + if m2 <= m3 then m2 else m3
+=                                (def <=)
+  m1 + if False then m2 else m3
+=                                (eval-if)
+  m1 + m3  -- VALE EL CASO VALE LA PROPIEDAD
 
 Lema de fusion de rama else de if: ¿para todo b1. para todo b2. para todo x. para todo y. if b1 then x else if b2 then x else y = if b1 || b2 then x else y?
 Dem: sean b1' b2' e e':
@@ -1512,33 +1547,32 @@ agregarDirM (n,Just ds1) (m,Just ds2) = if n>m then (m+1,Just (Der:ds2)) else (n
 agregarDirM (n,Just ds)  _            = (n+1,Just (Izq:ds))
 agregarDirM _            (m,Just ds)  = (m+1,Just (Der:ds))
 agregarDirM _            _            = (0,Nothing)
-
+{-
 estaEnElCamino :: [Dir'] -> Tree a -> Bool
--- PROP: Dado un camino y un arbol y me dice si esta o no donde apunta la lista de direcciones.
 estaEnElCamino = foldr (\d h -> \t -> case t of EmptyT -> False; NodeT _ ti td -> case d of Izq -> h ti; _ -> h td)
                        (\t -> case t of EmptyT -> False; _ -> True)
+-}
+estaEnElCamino :: [Dir'] -> Tree a -> Bool
+-- PROP: Dado un camino y un arbol y me dice si esta o no donde apunta la lista de direcciones.
+estaEnElCamino = flip (foldT null (\x h1 h2 -> \ds -> case ds of [] -> True; (Izq:ds) -> h1 ds; (Der:ds) -> h2 ds))
 
 todosLosCaminosDeDirs :: Tree a -> [[Dir']]
 -- PROP: Devuelve una lista de lista de todas las direcciones posibles que hay en el arbol dado, incluyendo empty.
-todosLosCaminosDeDirs = foldT [[]] (\_ ds1 ds2 -> agregarDir Izq ds1 ++ agregarDir Der ds2)
-
-agregarDir :: Dir' -> [[Dir']] -> [[Dir']]
-agregarDir _ []       = []
-agregarDir d (ds:dss) = (d : ds) : agregarDir d dss
+todosLosCaminosDeDirs = foldT [[]] (\_ ds1 ds2 -> map (Izq:) ds1 ++ map (Der:) ds2)
 
 todosLosCaminosDeDirsHasta :: Eq a => a -> Tree a -> [[Dir']]
 -- PROP: Devuelve todos los caminos que llevarian a esos elementos, el elemento puede estar repetido.
 todosLosCaminosDeDirsHasta e = foldT []
-                                     (\x ds1 ds2 -> if e==x then [] : agregarDir Izq ds1 ++ agregarDir Der ds2 else agregarDir Izq ds1 ++ agregarDir Der ds2)
+                                     (\x ds1 ds2 -> if e==x then [] : map (Izq:) ds1 ++ map (Der:) ds2 else map (Izq:) ds1 ++ map (Der:) ds2)
 
-countByT :: (a -> Bool) -> Tree a -> Int
-countByT _ EmptyT          = 0
-countByT p (NodeT x ti td) = unoSi (p x) + countByT p ti + countByT p td
+countByT' :: (a -> Bool) -> Tree a -> Int
+countByT' _ EmptyT          = 0
+countByT' p (NodeT x ti td) = unoSi (p x) + countByT' p ti + countByT' p td
 
-todosLosCaminosDeDirsHasta :: Eq a => a -> Tree a -> [[Dir']]
-todosLosCaminosDeDirsHasta e EmptyT          = []
-todosLosCaminosDeDirsHasta e (NodeT x ti td) = let ds = agregarDir Izq (todosLosCaminosDeDirsHasta e ti) ++ agregarDir Der (todosLosCaminosDeDirsHasta e td)
-                                                in if e==x then [] : ds else ds
+todosLosCaminosDeDirsHasta' :: Eq a => a -> Tree a -> [[Dir']]
+todosLosCaminosDeDirsHasta' e EmptyT          = []
+todosLosCaminosDeDirsHasta' e (NodeT x ti td) = let ds = map (Izq:) (todosLosCaminosDeDirsHasta' e ti) ++ map (Der:) (todosLosCaminosDeDirsHasta' e td)
+                                                 in if e==x then [] : ds else ds
 
 Prop: ¿para todo e. countByT (e==) = length . todosLosCaminosDeDirsHasta e?
 Dem: por ppio de ext. y por (.)
@@ -1571,53 +1605,53 @@ if e'==x then 1 + countByT (e'==) ti + countByT (e'==) td else countByT (e'==) t
 Lado der:
 length (todosLosCaminosDeDirsHasta e' (NodeT x ti td))
 = def todosLosCaminosDeDirsHasta.2
-length (let ds = agregarDir Izq (todosLosCaminosDeDirsHasta e' ti) ++ agregarDir Der (todosLosCaminosDeDirsHasta e' td) in if e'==x then [] : ds else ds)
+length (let ds = map (Izq:) (todosLosCaminosDeDirsHasta e' ti) ++ map (Der:) (todosLosCaminosDeDirsHasta e' td) in if e'==x then [] : ds else ds)
 = def ds
 length (if e'==x
-         then [] : agregarDir Izq (todosLosCaminosDeDirsHasta e' ti) ++ agregarDir Der (todosLosCaminosDeDirsHasta e' td)
-         else agregarDir Izq (todosLosCaminosDeDirsHasta e' ti) ++ agregarDir Der (todosLosCaminosDeDirsHasta e' td))
+         then [] : map (Izq:) (todosLosCaminosDeDirsHasta e' ti) ++ map (Der:) (todosLosCaminosDeDirsHasta e' td)
+         else map (Izq:) (todosLosCaminosDeDirsHasta e' ti) ++ map (Der:) (todosLosCaminosDeDirsHasta e' td))
 = prop of-then-else
 if e'==x
- then length ([] : agregarDir Izq (todosLosCaminosDeDirsHasta e' ti) ++ agregarDir Der (todosLosCaminosDeDirsHasta e' td))
- else length (agregarDir Izq (todosLosCaminosDeDirsHasta e' ti) ++ agregarDir Der (todosLosCaminosDeDirsHasta e' td))
+ then length ([] : map (Izq:) (todosLosCaminosDeDirsHasta e' ti) ++ map (Der:) (todosLosCaminosDeDirsHasta e' td))
+ else length (map (Izq:) (todosLosCaminosDeDirsHasta e' ti) ++ map (Der:) (todosLosCaminosDeDirsHasta e' td))
 = def length.2
 if e'==x
- then 1 + length (agregarDir Izq (todosLosCaminosDeDirsHasta e' ti) ++ agregarDir Der (todosLosCaminosDeDirsHasta e' td))
- else length (agregarDir Izq (todosLosCaminosDeDirsHasta e' ti) ++ agregarDir Der (todosLosCaminosDeDirsHasta e' td))
+ then 1 + length (map (Izq:) (todosLosCaminosDeDirsHasta e' ti) ++ map (Der:) (todosLosCaminosDeDirsHasta e' td))
+ else length (map (Izq:) (todosLosCaminosDeDirsHasta e' ti) ++ map (Der:) (todosLosCaminosDeDirsHasta e' td))
 = Lema practica 8.1.2.a
 if e'==x
- then 1 + length (agregarDir Izq (todosLosCaminosDeDirsHasta e' ti)) + length (agregarDir Der (todosLosCaminosDeDirsHasta e' td))
- else length (agregarDir Izq (todosLosCaminosDeDirsHasta e' ti)) + length (agregarDir Der (todosLosCaminosDeDirsHasta e' td))
-= Lema length-agregarDir
+ then 1 + length (map (Izq:) (todosLosCaminosDeDirsHasta e' ti)) + length (map (Der:) (todosLosCaminosDeDirsHasta e' td))
+ else length (map (Izq:) (todosLosCaminosDeDirsHasta e' ti)) + length (map (Der:) (todosLosCaminosDeDirsHasta e' td))
+= Lema length-map
 if e'==x
  then 1 + length (todosLosCaminosDeDirsHasta e' ti) + length (todosLosCaminosDeDirsHasta e' td)
  else length (todosLosCaminosDeDirsHasta e' ti) + length (todosLosCaminosDeDirsHasta e' td)
 = HI1, HI2, HI1, HI2
 if e'==x then 1 + countByT (e'==) ti + countByT (e'==) td else countByT (e'==) ti + countByT (e'==) td  -- VALE EL CASO VALE LA PROPIEDAD
 
-Lema length-agregarDir: ¿para todo d. para todo xss. length (agregarDir d xss) = length xss?
-Dem: sean d' dss. Por ppio de ind. en la estructura de dss:
-CB dss = []) ¿length (agregarDir d' []) = length []?
-CI dss = ds:dss') HI) ¡length (agregarDir d' dss') = length dss'!
-                  TI) ¿length (agregarDir d' (ds:dss')) = length (ds:dss')?
+Lema length-map: ¿para todo f. para todo xs. length (map f xs) = length xs?
+Dem: sean h zs. Por ppio de ind. en la estructura de zs:
+CB zs = []) ¿length (map h []) = length []?
+CI zs = x:xs') HI) ¡length (map h xs') = length xs'!
+               TI) ¿length (map h (x:xs')) = length (x:xs')?
 Dem CB:
 Lado izq:
-length (agregarDir d' [])
-= def agregarDir.1
+length (map h [])
+= def map.1
 length []  -- VALE EL CASO
 Dem CI:
 LAdo izq:
-length (agregarDir d' (ds:dss'))
-= def agregarDir.2
-length ((d' : ds) : agregarDir d' dss')
+length (map h (x:xs'))
+= def map.2
+length (h x : map h xs')
 = def length.2
-1 + length (agregarDir d' dss')
+1 + length (map h xs')
 = HI
-1 + length dss'
+1 + length xs'
 Lado der:
-length (ds:dss')
+length (x:xs')
 = def length.2
-1 + length dss'  -- VALE EL CASO VALE LA PROPIEDAD
+1 + length xs'  -- VALE EL CASO VALE LA PROPIEDAD
 
 Lema unoSi-if: ¿para todo b. para todo n. unoSi b + n = if b then 1 + n else n?
 Dem: sean b' y m:
