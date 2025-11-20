@@ -277,7 +277,7 @@ evalR (Repetir e c)     t = case mEvalExpRInt e t of
 evalR (Mientras e c)    t = case mEvalExpRBool e t of
                              Nothing -> t
                              Just b  -> evalR (Mientras (Lit b) c) (evalR c t)
-evalR (Secuencia c1 c2) t = evalR c1 (evalR c2 t)
+evalR (Secuencia c1 c2) t = evalR c1 (evalR c2 t)  -- va al reves?
 
 mEvalExpRInt :: ExpR Int -> TableroR -> Maybe Int
 mEvalExpRInt (Lit n)           _ = Just n
@@ -350,28 +350,28 @@ Caso ind., e' = NBOp bop ne1 ne2) HI1) ¡cantExtra (cfNE ne1) = 0!
                                   HI2) ¡cantExtra (cfNE ne2) = 0!
                                   TI) ¿cantExtra (cfNE (NBOp bop ne1 ne2)) = 0?
 Dem caso base 1:
-cantExtra (cfNE (Var x))
-= def cfNE.1
-cantExtra (Var x)
-= def cantExtra.1
-0   -- VALE EL CASO
+  cantExtra (cfNE (Var x))
+=                                cfNE.1
+  cantExtra (Var x)
+=                                cantExtra.1
+  0   -- VALE EL CASO
 Dem caso base 2:
-cantExtra (cfNE (NCte n))
-= def cfNE.2
-cantExtra (NCte n)
-= def cantExtra.2
-0   -- VALE EL CASO
+  cantExtra (cfNE (NCte n))
+=                                cfNE.2
+  cantExtra (NCte n)
+=                                cantExtra.2
+  0   -- VALE EL CASO
 Dem caso ind.:
 Lado izq:
-cantExtra (cfNE (NBOp bop ne1 ne2))
-= def cfNE.3
-cantExtra (cfBOp bop (cfNE ne1) (cfNE ne2))
-= Lema cantExtra
-cantExtra (cfNE ne1) + cantExtra (cfNE ne2)
-= HI1, HI2
-0 + 0
-= aritm.
-0   -- VALE EL CASO VALE LA PROPIEDAD
+  cantExtra (cfNE (NBOp bop ne1 ne2))
+=                                cfNE.3
+  cantExtra (cfBOp bop (cfNE ne1) (cfNE ne2))
+=                                Lema cantExtra
+  cantExtra (cfNE ne1) + cantExtra (cfNE ne2)
+=                                HI1, HI2
+  0 + 0
+=                                aritm.
+  0   -- VALE EL CASO VALE LA PROPIEDAD
 
 Lema cantExtra: ¿para todo e1. para todo e2. para todo o. cantExtra (cfBOp o e1 e2) = cantExtra e1 + cantExtra e2?
 Dem: sea e1' y e2' dos NExp y o' un NBinOp:
@@ -380,47 +380,47 @@ Caso 2, e1' = NCte n) ¿cantExtra (cfBOp o' (NCte n) e2') = cantExtra (NCte n) +
 Caso 3, e1' = NBOp bop ne1 ne2) ¿cantExtra (cfBOp o' (NBOp bop ne1 ne2) e2') = cantExtra (NBOp bop ne1 ne2) + cantExtra e2'?
 Dem caso 1:
 Lado izq:
-cantExtra (cfBOp o' (Var x) e2')
-= def cfBOp.2
-cantExtra (NBOp o' (Var x) e2')
-= def cantExtra.3
-unoSiPuedeOptimizar (Var x) e2' + cantExtra (Var x) + cantExtra e2'
-= def unoSiPuedeOptimizar.2, def cantExtra.1
-0 + 0 + cantExtra e2'
-= artim.
-cantExtra e2'
+  cantExtra (cfBOp o' (Var x) e2')
+=                                cfBOp.2
+  cantExtra (NBOp o' (Var x) e2')
+=                                cantExtra.3
+  unoSiPuedeOptimizar (Var x) e2' + cantExtra (Var x) + cantExtra e2'
+=                                unoSiPuedeOptimizar.2, def cantExtra.1
+  0 + 0 + cantExtra e2'
+=                                artim.
+  cantExtra e2'
 Lado der:
-cantExtra (Var x) + cantExtra e2'
-= def cantExtra.1
-0 + cantExtra e2'
-= aritm.
-cantExtra e2'   -- VALE EL CASO
+  cantExtra (Var x) + cantExtra e2'
+=                                cantExtra.1
+  0 + cantExtra e2'
+=                                aritm.
+  cantExtra e2'   -- VALE EL CASO
 Dem caso 2:
 Lado izq:
-cantExtra (cfBOp o' (NCte n) e2')
-= Lema cfBOp
-cantExtra e2'
+  cantExtra (cfBOp o' (NCte n) e2')
+=                                Lema cfBOp
+  cantExtra e2'
 Lado der:
-cantExtra (NCte n) + cantExtra e2'
-= def cantExtra.2
-0 + cantExtra e2'
-= aritm.
-cantExtra e2'   -- VALE EL CASO
+  cantExtra (NCte n) + cantExtra e2'
+=                                cantExtra.2
+  0 + cantExtra e2'
+=                                aritm.
+  cantExtra e2'   -- VALE EL CASO
 Dem caso ind.:
 Lado izq:
-cantExtra (cfBOp o' (NBOp bop ne1 ne2) e2')
-= def cfBOp.2
-cantExtra (NBOp o' (NBOp bop ne1 ne2) e2')
-= def cantExtra.3
-unoSiPuedeOptimizar (NBOp bop ne1 ne2) e2' + cantExtra (NBOp bop ne1 ne2) + cantExtra e2'
-= def unoSiPuedeOptimizar.2, cantExtra.3
-0 + (unoSiPuedeOptimizar ne1 ne2 + cantExtra ne1 + cantExtra ne2) + cantExtra e2'
-= aritm.
-unoSiPuedeOptimizar ne1 ne2 + cantExtra ne1 + cantExtra ne2 + cantExtra e2'
+  cantExtra (cfBOp o' (NBOp bop ne1 ne2) e2')
+=                                cfBOp.2
+  cantExtra (NBOp o' (NBOp bop ne1 ne2) e2')
+=                                cantExtra.3
+  unoSiPuedeOptimizar (NBOp bop ne1 ne2) e2' + cantExtra (NBOp bop ne1 ne2) + cantExtra e2'
+=                                unoSiPuedeOptimizar.2, cantExtra.3
+  0 + (unoSiPuedeOptimizar ne1 ne2 + cantExtra ne1 + cantExtra ne2) + cantExtra e2'
+=                                aritm.
+  unoSiPuedeOptimizar ne1 ne2 + cantExtra ne1 + cantExtra ne2 + cantExtra e2'
 Lado der:
-cantExtra (NBOp bop ne1 ne2) + cantExtra e2'
-= def cantExtra.3
-unoSiPuedeOptimizar ne1 ne2 + cantExtra ne1 + cantExtra ne2 + cantExtra e2'   -- VALE EL CASO VALE LA PROPIEDAD
+  cantExtra (NBOp bop ne1 ne2) + cantExtra e2'
+=                                cantExtra.3
+  unoSiPuedeOptimizar ne1 ne2 + cantExtra ne1 + cantExtra ne2 + cantExtra e2'   -- VALE EL CASO VALE LA PROPIEDAD
 
 Lema cfBOp: ¿para todo e. para todo o. para todo n. cantExtra (cfBOp o (NCte n) e) = cantExtra e?
 Dem: sea e' una NExp y o una BOp y m un Int:
@@ -428,26 +428,26 @@ Caso 1, e' = NCte n') ¿cantExtra (cfBOp o' (NCte m) (NCte n')) = cantExtra (NCt
 Caso 2, e' /= NCte n') ¿cantExtra (cfBOp o' (NCte m) e') = cantExtra e'?
 Dem caso 1:
 Lado izq:
-cantExtra (cfBOp o' (NCte m) (NCte n'))
-= def cfBOp.1
-cantExtra (NCte (evalNBOp o' m n'))
-= def cantExtra.2
-0
+  cantExtra (cfBOp o' (NCte m) (NCte n'))
+=                                cfBOp.1
+  cantExtra (NCte (evalNBOp o' m n'))
+=                                cantExtra.2
+  0
 Lado der:
-cantExtra (NCte n')
-= def cantExtra.2
-0   -- VALE EL CASO
+  cantExtra (NCte n')
+=                                cantExtra.2
+  0   -- VALE EL CASO
 Dem caso 2:
 Lado izq:
-cantExtra (cfBOp o' (NCte m) e')
-= def cfBOp.2
-cantExtra (NBOp o' (NCte m) e')
-= def cantExtra.3
-unoSiPuedeOptimizar (NCte m) e' + cantExtra (NCte m) + cantExtra e'
-= def unoSiPuedeOptimizar.2, def cantExtra.2
-0 + 0 + cantExtra e'
-= aritm.
-cantExtra e'   -- VALE EL CASO VALE LA PROPIEDAD
+  cantExtra (cfBOp o' (NCte m) e')
+=                                cfBOp.2
+  cantExtra (NBOp o' (NCte m) e')
+=                                cantExtra.3
+  unoSiPuedeOptimizar (NCte m) e' + cantExtra (NCte m) + cantExtra e'
+=                                unoSiPuedeOptimizar.2, def cantExtra.2
+  0 + 0 + cantExtra e'
+=                                aritm.
+  cantExtra e'   -- VALE EL CASO VALE LA PROPIEDAD
 
 EJERCICIO 1
 Prop: ¿evalNExp . cfNExp = evalNExp?
