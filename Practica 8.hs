@@ -1,3 +1,48 @@
+-- Seccion I
+-- Ejercicio 1
+-- Ejercicio a
+--length' :: [a] -> Int
+
+-- Ejercicio b
+--sum' :: [Int] -> Int
+
+-- Ejercicio c
+--product' :: [Int] -> Int
+
+-- Ejercicio d
+concat' :: [[a]] -> [a]
+concat' []        = []
+concat' (xs:xss) = xs ++ concat xss
+
+-- Ejercicio e
+--elem' :: Eq a => a -> [a] -> Bool
+
+-- Ejercicio f
+--all' :: (a -> Bool) -> [a] -> Bool
+
+-- Ejercicio g
+--any' :: (a -> Bool) -> [a] -> Bool
+
+-- Ejercicio h
+--count :: (a -> Bool) -> [a] -> Int
+
+-- Ejercicio i
+--subset :: Eq a => [a] -> [a] -> Bool
+
+-- Ejercicio j
+--(++)' :: [a] -> [a] -> [a]
+
+-- Ejercicio k
+reverse' :: [a] -> [a]
+reverse' []     = []
+reverse' (x:xs) = reverse xs ++ x : []
+
+-- Ejercicio l
+--zip' :: [a] -> [b] -> [(a,b)]
+
+-- Ejercicio m
+--unzip' :: [(a,b)] -> ([a],[b])
+
 -- Seccion II
 -- Ejercicio 1
 data N = Z | S N
@@ -112,11 +157,15 @@ dbAsBool _ = True
 -- Ejercicio v
 nb2n :: NBin -> N
 nb2n []     = Z
-nb2n (d:ds) = dbAsN d (S (S Z) `prodN` nb2n ds)
+nb2n (d:ds) = dbAsN d (duplicar (nb2n ds))
 
 dbAsN :: DigBin -> N -> N
 dbAsN O = id
 dbAsN _ = S
+
+duplicar :: N -> N
+duplicar Z     = Z
+duplicar (S n) = S (S (duplicar n))
 
 -- Ejercicio vi
 n2nb :: N -> NBin
@@ -130,7 +179,7 @@ data ExpA = Cte Int | Suma ExpA ExpA | Prod ExpA ExpA
 
 -- Ejercicio i
 evalExpA :: ExpA -> Int
-evalExpA (Cte  n)    = n
+evalExpA (Cte n)     = n
 evalExpA (Suma e e') = evalExpA e + evalExpA e'
 evalExpA (Prod e e') = evalExpA e * evalExpA e'
 
@@ -199,9 +248,12 @@ multPot2 (Dos n) p = Dos (multPot2 n p)
 
 laMasLarga :: [[a]] -> [a]
 laMasLarga []       = []
-laMasLarga (xs:xss) = if length xs > length (laMasLarga xss)
-                       then xs
-                       else laMasLarga xss
+laMasLarga (xs:xss) = maxBy length xs (laMasLarga xss)
+
+maxBy :: (a -> Int) -> a -> a -> a
+maxBy f x y = if f x > f y
+                then x
+                else y
 
 elMas :: (a -> Int) -> [a] -> a
 -- PRECOND: La lista no es vacia.
@@ -214,3 +266,10 @@ elMas f (x:xs) = if f x > f (elMas f xs)
 laMasLarga' :: [[a]] -> [a]
 -- PRECOND: La lista no es vacia.
 laMasLarga' = elMas length
+
+-- Prop: ¿succNB = addNB [I]?
+
+-- resolver con foldr
+unzip' :: [(a,b)] -> ([a],[b])
+unzip' = foldr (\(x,y) ps -> let (xs,ys) = ps in (x:xs,y:ys)) ([],[])
+-- Representaciones numéricas, por lo menos N y NBin
