@@ -9,11 +9,11 @@ data ExpA = Cte Int | Suma ExpA ExpA | Prod ExpA ExpA
 -- Ejercicio i
 evalEA :: EA -> Int
 evalEA (Const n)      = n
-evalEA (BOp op e1 e2) = operator op (evalEA e1) (evalEA e2)
+evalEA (BOp op e1 e2) = evalBOp op (evalEA e1) (evalEA e2)
 
-operator :: BinOp -> Int -> Int -> Int
-operator Sum = (+)
-operator Mul = (*)
+evalBOp :: BinOp -> Int -> Int -> Int
+evalBOp Sum = (+)
+evalBOp Mul = (*)
 
 -- Ejercicio ii
 ea2ExpA :: EA -> ExpA
@@ -125,12 +125,10 @@ levelN n (NodeT x ti td) = levelN (n-1) ti ++ levelN (n-1) td
 -- Ejercicio xi
 ramaMasLarga :: Tree a -> [a]
 ramaMasLarga EmptyT          = []
-ramaMasLarga (NodeT x ti td) = x : laMasLarga (ramaMasLarga ti) (ramaMasLarga td)
+ramaMasLarga (NodeT x ti td) = x : maxBy length (ramaMasLarga ti) (ramaMasLarga td)
 
-laMasLarga :: [a] -> [a] -> [a]
-laMasLarga xs ys = if length xs > length ys
-                    then xs
-                    else ys
+maxBy :: (a -> Int) -> a -> a -> a
+maxBy f x y = if f x > f y then x else y
 
 -- Ejercicio xii
 todosLosCaminos :: Tree a -> [[a]]
@@ -222,7 +220,7 @@ data AppList a = Single a | Append (AppList a) (AppList a)
 -- Ejercicio i
 lenAL :: AppList a -> Int
 lenAL (Single _)     = 1
-lenAL (Append li ld) = lenAL li + lenAL ld
+lenAL (Append xs ys) = lenAL xs + lenAL ys
 
 -- Ejercicio ii
 consAL :: a -> AppList a -> AppList a
@@ -231,14 +229,14 @@ consAL x al = Append (Single x) al
 -- Ejercicio iii
 headAL :: AppList a -> a
 headAL (Single x)    = x
-headAL (Append li _) = headAL li
+headAL (Append xs _) = headAL xs
 
 -- Ejercicio iv
 tailAL :: AppList a -> AppList a
 -- PRECOND: La lista tiene mas de un elemento.
 tailAL (Single x)             = error "Tiene un solo elemento"
-tailAL (Append (Single _) ld) = ld
-tailAL (Append li         ld) = Append (tailAL li) ld
+tailAL (Append (Single _) ys) = ys
+tailAL (Append xs         ys) = Append (tailAL xs) ys
 
 -- Ejercicio v
 snocAL :: AppList a -> a -> AppList a
@@ -247,24 +245,24 @@ snocAL al x = Append al (Single x)
 -- Ejercicio vi
 lastAL :: AppList a -> a
 lastAL (Single x)    = x
-lastAL (Append _ ld) = lastAL ld
+lastAL (Append _ ys) = lastAL ys
 
 -- Ejercicio vii
 initAL :: AppList a -> AppList a
 -- PRECOND: La lista tiene mas de un elemento.
 initAL (Single _)             = error "Tiene un solo elemento"
-initAL (Append li (Single _)) = li
-initAL (Append li ld)         = Append li (initAL ld)
+initAL (Append xs (Single _)) = xs
+initAL (Append xs ys)         = Append xs (initAL ys)
 
 -- Ejercicio viii
 reverseAL :: AppList a -> AppList a
 reverseAL (Single x)     = Single x
-reverseAL (Append li ld) = Append (reverseAL ld) (reverseAL li)
+reverseAL (Append xs ys) = Append (reverseAL ys) (reverseAL xs)
 
 -- Ejercicio ix
 elemAL :: Eq a => a -> AppList a -> Bool
 elemAL x (Single y)     = x==y
-elemAL x (Append li ld) = elemAL x li || elemAL x ld
+elemAL x (Append xs ys) = elemAL x xs || elemAL x ys
 
 -- Ejercicio x
 appendAL :: AppList a -> AppList a -> AppList a
@@ -273,7 +271,7 @@ appendAL al1 al2 = Append al1 al2
 -- Ejercicio xi
 appListToList :: AppList a -> [a]
 appListToList (Single x)     = [x]
-appListToList (Append li ld) = appListToList li ++ appListToList ld
+appListToList (Append xs ys) = appListToList xs ++ appListToList ys
 
 -- Ejercicio 5
 data QuadTree a = LeafQ a | NodeQ (QuadTree a) (QuadTree a) (QuadTree a) (QuadTree a)
@@ -284,7 +282,7 @@ type Image = QuadTree Color
 
 -- Ejercicio i
 heightQT :: QuadTree a -> Int
-heightQT (LeafQ _)           = 0
+heightQT (LeafQ _)           = 1
 heightQT (NodeQ t1 t2 t3 t4) = 1 + heightQT t1 `max` heightQT t2 `max` heightQT t3 `max` heightQT t4
 
 -- Ejercicio ii
@@ -310,35 +308,143 @@ compressLeaf t1        t2        t3        t4        = NodeQ t1 t2 t3 t4
 
 -- Ejercicio v
 uncompress :: QuadTree a -> QuadTree a
-uncompress (LeafQ x)           = LeafQ x
-uncompress (NodeQ t1 t2 t3 t4) = if hayAlgunNodo t1 t2 t3 t4
-                                  then NodeQ (expandir (uncompress t1)) (expandir (uncompress t2)) (expandir (uncompress t3)) (expandir (uncompress t4))
-                                  else NodeQ t1 t2 t3 t4
+uncompress t = expandir (heightQT t) t
 
-hayAlgunNodo :: QuadTree a -> QuadTree a -> QuadTree a -> QuadTree a -> Bool
-hayAlgunNodo t1 t2 t3 t4 = esNodo t1 || esNodo t2 || esNodo t3 || esNodo t4
-
-esNodo :: QuadTree a -> Bool
-esNodo (LeafQ _) = False
-esNodo _         = True
-
-expandir :: QuadTree a -> QuadTree a
-expandir (LeafQ x) = NodeQ (LeafQ x) (LeafQ x) (LeafQ x) (LeafQ x)
-expandir qt        = qt
-
---uncompress (NodeQ t1 t2 t3 t4) = let (ut1, ut2, ut3, ut4) = (uncompress t1 `uncompressLeaf` uncompress t2 `uncompressLeaf` uncompress t3 `uncompressLeaf` uncompress t4,
---                                                             uncompress t2 `uncompressLeaf` uncompress t1 `uncompressLeaf` uncompress t3 `uncompressLeaf` uncompress t4,
---                                                             uncompress t3 `uncompressLeaf` uncompress t1 `uncompressLeaf` uncompress t2 `uncompressLeaf` uncompress t4,
---                                                             uncompress t4 `uncompressLeaf` uncompress t1 `uncompressLeaf` uncompress t2 `uncompressLeaf` uncompress t3)
---                                  in NodeQ ut1 ut2 ut3 ut4
---uncompressLeaf :: QuadTree a -> QuadTree a -> QuadTree a
---uncompressLeaf (LeafQ x) (NodeQ _ _ _ _) = NodeQ (LeafQ x) (LeafQ x) (LeafQ x) (LeafQ x)
---uncompressLeaf q         _               = q
+expandir :: Int -> QuadTree a -> QuadTree a
+expandir 0 t                   = t
+expandir n (LeafQ x)           = NodeQ (expandir (n-1) (LeafQ x)) (expandir (n-1) (LeafQ x)) (expandir (n-1) (LeafQ x)) (expandir (n-1) (LeafQ x))
+expandir n (NodeQ t1 t2 t3 t4) = NodeQ (expandir (n-1) t1) (expandir (n-1) t2) (expandir (n-1) t3) (expandir (n-1) t4)
 
 -- Ejercicio vi
---render :: Image -> Int -> Image
+render :: Image -> Int -> Image
+render i n = expandir (logBase 4 n) i
 
 -- Ejercicio adicional
+data Objeto = Moneda | Pelusa
+data Dungeon = Cueva | Habitacion [Objeto] Dungeon Dungeon
+
+objs :: Dungeon -> [Objeto]
+objs Cueva                 = []
+objs (Habitacion os d1 d2) = os ++ objs d1 ++ objs d2
+
+excavar :: Dungeon -> Dungeon
+excavar Cueva                 = Habitacion [] Cueva Cueva
+excavar (Habitacion os d1 d2) = Habitacion (doblar os) (excavar d1) (excavar d2)
+
+doblar :: [Objeto] -> [Objeto]
+doblar []     = []
+doblar (o:os) = doblarObj o ++ doblar os
+
+doblarObj :: Objeto -> [Objeto]
+doblarObj Moneda = [Moneda, Moneda]
+doblarObj o      = [o]
+
+Prop: ¿objs . excavar = doblar . objs?
+Dem: por ppio de ext.
+¿para todo d. (objs . excavar) d = (doblar . objs) d?
+por (.)
+¿para todo d. objs (excavar d) = doblar (objs d)?
+sea d'. Por ppio de ind. en la estructura de d':
+CB d' = Cueva) ¿objs (excavar Cueva) = doblar (objs Cueva)?
+CI d' = Habitacion os d1 d2) HI1) ¡objs (excavar d1) = doblar (objs d1)!
+                             HI2) ¡objs (excavar d2) = doblar (objs d2)!
+                             TI) ¿objs (excavar (Habitacion os d1 d2)) = doblar (objs (Habitacion os d1 d2))?
+Dem CB:
+Lado izq:
+  objs (excavar Cueva)
+=                                (excavar.1)
+  objs (Habitacion [] Cueva Cueva)
+=                                (objs.2)
+  [] ++ objs Cueva ++ objs Cueva
+=                                (objs.1)
+  [] ++ [] ++ objs Cueva
+=                                (objs.1)
+  [] ++ [] ++ []
+=                                (++.1)
+  [] ++ []
+=                                (++.1)
+  []
+Lado der:
+  doblar (objs Cueva)
+=                                (objs.1)
+  doblar []
+=                                (doblar.1)
+  []  -- VALE EL CASO
+Dem CI:
+Lado izq:
+  objs (excavar (Habitacion os d1 d2))
+=                                (excavar.2)
+  objs (Habitacion (doblar os) (excavar d1) (excavar d2))
+=                                (objs.2)
+  doblar os ++ objs (excavar d1) ++ objs (excavar d2)
+=                                (HI1, HI2)
+  doblar os ++ doblar (objs d1) ++ doblar (objs d2)
+=                                (Lema doblar-append)
+  doblar os ++ doblar (objs d1 ++ objs d2)
+=                                (Lema doblar-append)
+  doblar (os ++ objs d1 ++ objs d2)
+Lado der:
+  doblar (objs (Habitacion os d1 d2))
+=                                (objs.2)
+  doblar (os ++ objs d1 ++ objs d2)  -- VALE EL CASO VALE LA PROPIEDAD
+
+Lema doblar-append: ¿para todo xs. para todo ys. doblar xs ++ doblar ys = doblar (xs ++ ys)?
+Dem: sean zs ws. Por ppio de ind. en la estructura de zs:
+CB zs = []) ¿doblar [] ++ doblar ws = doblar ([] ++ ws)?
+CI zs = o:os) HI) ¡doblar os ++ doblar ws = doblar (os ++ ws)!
+              TI) ¿doblar (o:os) ++ doblar ws = doblar ((o:os) ++ ws)?
+Dem CB:
+Lado izq:
+  doblar [] ++ doblar ws
+=                                (doblar.1)
+  [] ++ doblar ws
+=                                (++.1)
+  doblar ws
+Lado der:
+  doblar ([] ++ ws)
+=                                (++.1)
+  doblar ws  -- VALE EL CASO
+Dem CI:
+Lado izq:
+  doblar (o:os) ++ doblar ws
+=                                (doblar.2)
+  (doblarObj o ++ doblar os) ++ doblar ws
+=                                (Lema asociatividad-append)
+  doblarObj o ++ doblar os ++ doblar ws
+=                                (HI)
+  doblarObj o ++ doblar (os ++ ws)
+Lado der:
+  doblar ((o:os) ++ ws)
+=                                (++.2)
+  doblar (o : os ++ ws)
+=                                (doblar.2)
+  doblarObj o ++ doblar (os ++ ws)  -- VALE EL CASO VALE LA PROPIEDAD
+
+Lema asociatividad-append: ¿para todo xs. para todo ys. para todo zs. xs ++ (ys ++ zs) = (xs ++ ys) ++ zs?
+Dem: sean ws ys' zs'. Por ppio de ind. en la estructura de ws:
+C1 ws = []) ¿[] ++ (ys' ++ zs') = ([] ++ ys') ++ zs'?
+C2 ws = x:xs') ¿(x:xs') ++ (ys' ++ zs') = ((x:xs') ++ ys') ++ zs'?
+Dem C1:
+Lado izq:
+  [] ++ (ys' ++ zs')
+=                                (++.1)
+  ys' ++ zs'
+Lado der:
+  ([] ++ ys') ++ zs'
+=                                (++.1)
+  ys' ++ zs'  -- VALE EL CASO
+Dem C2:
+Lado izq:
+  (x:xs') ++ (ys' ++ zs')
+=                                (++.2)
+  x : (xs' ++ ys' ++ zs')
+Lado der:
+  ((x:xs') ++ ys') ++ zs'
+=                                (++.2)
+  (x : (xs' ++ ys')) ++ zs'
+=                                (++.2)
+  x : (xs' ++ ys' ++ zs')  -- VALE EL CASO VALE LA PROPIEDAD
+
 losAntecesoresDe :: Eq a => a -> Tree a -> [a]
 -- PRECOND: El elemento dado existe en el arbol dado.
 losAntecesoresDe x t = case posiblesAntecesores x t of
@@ -366,6 +472,38 @@ t = NodeT 1
                   (NodeT 8 EmptyT EmptyT)
                   (NodeT 9 EmptyT EmptyT)))
 
---LEMAS a plantear:
--- Lema doblar-append-2: ¿para todo xs. para todo ys. doblar (xs ++ ys) = doblar xs ++ ys?
--- Lema asociatividad-append: ¿para todo xs. para todo ys. para todo zs. xs ++ (ys ++ zs) = (xs ++ ys) ++ zs?
+Prop: ¿uncompress = subst render heightQT?
+Dem: por ppio de ext
+¿para todo t. uncompress t = subst render heightQT t?
+sea t' un arbol:
+Lado izq:
+uncompress t'
+= def uncompress
+expandir (heightQT t') t'
+Lado der:
+subst render heightQT t'
+= def subst
+render t' (heightQT t')
+= def render
+expandir (heightQT t') t'
+
+Prop: ¿para todo t. heightT t >= 0?
+Dem: sea t'. Por ppio de ind. en la estructura de t':
+CB t' = Empty) ¿heightT Empty >= 0?
+CI t' = NodeT x ti td) HI1) ¡heightT t1 >= 0!
+                       HI2) ¡heightT t2 >= 0!
+                       TI) ¿heightT (NodeT x ti td) >= 0?
+Dem CB:
+Lado izq:
+  heightT Empty
+=                                (heightT.1)
+  0
+Dem CI:
+Lado izq:
+  heightT (NodeT x ti td)
+=                                (heightT.2)
+  1 + heightT ti `max` heightT td
+=                                (HI1,HI2)
+  1 + 0 + 0
+=                                (aritm.)
+  1
